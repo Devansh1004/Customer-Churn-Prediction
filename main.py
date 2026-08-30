@@ -1,10 +1,17 @@
-from fastapi import FastAPI
-from api.schemas import Response, Request
-import joblib
 import json
+import joblib
+
+from fastapi import FastAPI, Depends, Query
+from api.schemas import Response, Request, DBResponse, PredictionStatsresponse
+
 from src.inference import prediction
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from database.session import get_db
+from database.crud import create_prediction_log, get_prediction_logs, get_prediction_stats
+
 app = FastAPI()
+
 
 model = None
 try:
@@ -12,9 +19,19 @@ try:
 except Exception as e:
     print("Exception : ", e)
 
+
+
 config = None
 with open("models/model_config.json", 'r') as f:
     config = json.load(f)
+    
+
+
+model_version = None
+if config is not None:
+    model_version = config['model_version']
+
+
 
 @app.get("/")
 def home_page():
@@ -29,9 +46,36 @@ def get_health():
     return {
         'message' : 'OK',
         'model_loaded' : model_load,
-        'config_loaded' : config_load
+        'config_loaded' : config_load,
+        'model_version' : model_version
     }
     
+@app.get("/predictions/stats", response_model=PredictionStatsresponse)
+async def get_stats(db : AsyncSession = Depends(get_db)):
+    stats = await get_prediction_stats(db)
+    
+    return {
+        "total_predictions" : stats.total_predictions or 0,
+        "churn_predictions" : stats.churn_predictions or 0,
+        "non_churn_predictions" : stats.non_churn_predictions or 0,
+        "mean_churn_probability" : (float(stats.mean_churn_probability) if stats.mean_churn_probability is not None else 0.0)
+    }    
+    
+@app.get("/predictions", response_model=list[DBResponse])
+async def get_predictions(limit : int = Query(default=20, ge=1, le=500), db : AsyncSession = Depends(get_db)):
+    logs = await get_prediction_logs(db = db, limit = limit)
+    return logs
+    
 @app.post("/predict", response_model=Response)
-def predict(request : Request):
-    return prediction(request.model_dump(), model, config)
+async def predict(request : Request, db : AsyncSession = Depends(get_db)):
+    
+    result = prediction(request.model_dump(), model, config)
+    
+    model_ver = model_version or "Unknown"
+    
+    await create_prediction_log(db, result['prediction'], result['churn_probability'], 
+                                result['display_probability'], model_ver)
+    
+    return result
+
+

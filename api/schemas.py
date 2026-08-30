@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Literal
+from datetime import datetime
 
 class Request(BaseModel):
     # TODO add descriptions
@@ -99,9 +100,6 @@ class Request(BaseModel):
         Field(ge=0, le=1)
     ]
     
-    
-    
-    
 class Response(BaseModel):
     prediction : Annotated[
         Literal[0, 1],
@@ -116,4 +114,47 @@ class Response(BaseModel):
     display_probability : Annotated[
         float,
         Field(ge=0, le=1)
+    ] 
+    
+class DBResponse(BaseModel):
+    
+    id : Annotated[
+        int,
+        Field()
     ]
+    
+    timestamp : Annotated[
+        datetime,
+        Field()
+    ]
+    
+    prediction : Annotated[
+            Literal[0, 1],
+            Field()
+        ]
+        
+    churn_probability : Annotated[
+        float,
+        Field(ge=0, le=1)
+    ]
+    
+    display_probability : Annotated[
+        float,
+        Field(ge=0, le=1)
+    ]
+    
+    model_version : Annotated[
+        str,
+        Field(max_length=20)
+    ]
+    
+    model_config = ConfigDict(
+        from_attributes = True
+    )
+    
+class PredictionStatsresponse(BaseModel):
+    total_predictions : int
+    churn_predictions : int
+    non_churn_predictions : int
+    mean_churn_probability : float
+    
