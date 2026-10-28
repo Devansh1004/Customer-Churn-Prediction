@@ -1,6 +1,6 @@
 import streamlit as st
 
-from api import predict_churn
+from api.api import predict_churn # pyright: ignore[reportAttributeAccessIssue]
 
 st.title('Predict Customer Churn')
 
@@ -239,7 +239,7 @@ if submitted:
 
         st.success("Prediction completed successfully.")
 
-        probability = result["churn_probability"]
+        probability = result["display_probability"]
         prediction = result["prediction"]
 
         col1, col2 = st.columns(2)

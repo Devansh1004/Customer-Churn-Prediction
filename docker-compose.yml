@@ -1,19 +1,24 @@
 services:
-
-  postgres:
-    image: postgres:16
-    container_name: churn_postgres
-
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: churn_api
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: churn_user
-      POSTGRES_PASSWORD: churn_password
-      POSTGRES_DB: churn_db
-
+      DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "5433:5432"
+      - "8000:8000"
 
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: churn_streamlit
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api

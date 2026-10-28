@@ -1,0 +1,5 @@
+churn_pred_env/
+.git/
+.env
+__pycache__/
+*.pyc
