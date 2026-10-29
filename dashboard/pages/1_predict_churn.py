@@ -1,10 +1,9 @@
 import streamlit as st
 
 from api.api import predict_churn # pyright: ignore[reportAttributeAccessIssue]
+from dashboard.style import setup, shap_chart, RISK_COLORS
 
-st.title('Predict Customer Churn')
-
-st.markdown("Enter the customer's information")
+setup("Predict Customer Churn", "Enter the customer's details to estimate churn risk", "🔮")
 
 with st.form("churn_prediction_form"):
 
@@ -206,7 +205,7 @@ with st.form("churn_prediction_form"):
 
     submitted = st.form_submit_button(
         "Predict Churn",
-        use_container_width=True
+        width='stretch'
     )
     
 if submitted:
@@ -237,24 +236,37 @@ if submitted:
 
         result = predict_churn(data)
 
-        st.success("Prediction completed successfully.")
-
         probability = result["display_probability"]
         prediction = result["prediction"]
 
-        col1, col2 = st.columns(2)
+        if probability < 0.5:
+            risk = "low"
+        elif probability < 0.75:
+            risk = "medium"
+        elif probability < 0.9:
+            risk = "high"
+        else:
+            risk = "severe"
 
-        with col1:
-            st.metric(
-                "Churn Probability",
-                f"{probability:.2%}"
-            )
+        st.subheader("Result")
 
-        with col2:
-            st.metric(
-                "Prediction",
-                "Will Churn" if prediction else "Will Not Churn"
-            )
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Churn Probability", f"{probability:.2%}")
+        col2.metric("Prediction", "Will Churn" if prediction else "Will Not Churn")
+        col3.markdown(
+            f'<div style="color:#94a3b8;font-size:0.875rem;margin-bottom:0.6rem">Risk Level</div>'
+            f'<span class="pill" style="background:{RISK_COLORS[risk]}">{risk.upper()}</span>',
+            unsafe_allow_html=True,
+        )
+
+        st.progress(min(max(probability, 0.0), 1.0))
+
+        shap_values = result.get("shap_values")
+
+        if shap_values:
+            st.subheader("Why this prediction?")
+            shap_chart(shap_values)
 
     except Exception as e:
 

@@ -21,6 +21,14 @@ except Exception as e:
 
 
 
+explainer = None
+try:
+    explainer = joblib.load("models/shap_explainer.pkl")
+except Exception as e:
+    print("Exception : ", e)
+
+
+
 config = None
 with open("models/model_config.json", 'r') as f:
     config = json.load(f)
@@ -47,6 +55,7 @@ def get_health():
         'message' : 'OK',
         'model_loaded' : model_load,
         'config_loaded' : config_load,
+        'explainer_loaded' : explainer is not None,
         'model_version' : model_version
     }
     
@@ -69,12 +78,13 @@ async def get_predictions(limit : int = Query(default=20, ge=1, le=500), db : As
 @app.post("/predict", response_model=Response)
 async def predict(request : Request, db : AsyncSession = Depends(get_db)):
     
-    result = prediction(request.model_dump(), model, config)
+    result = prediction(request.model_dump(), model, config, explainer)
     
     model_ver = model_version or "Unknown"
     
     await create_prediction_log(db, result['prediction'], result['churn_probability'], 
-                                result['display_probability'], model_ver)
+                                result['display_probability'], model_ver,
+                                result.get('shap_values'))
     
     return result
 

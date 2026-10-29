@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import JSON, DateTime, Float, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -17,7 +17,7 @@ class PredictionLog(Base):
     
     timestamp : Mapped[datetime] = mapped_column(
         DateTime,
-        default = datetime.now()
+        default = datetime.now
     )
     
     prediction : Mapped[int] = mapped_column(
@@ -38,6 +38,11 @@ class PredictionLog(Base):
     model_version: Mapped[str] = mapped_column(
         String(20),
         nullable=False
+    )
+
+    shap_values : Mapped[list | None] = mapped_column(
+        JSON,
+        nullable=True
     )
     
     

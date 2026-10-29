@@ -100,6 +100,11 @@ class Request(BaseModel):
         Field(ge=0, le=1)
     ]
     
+class ShapContribution(BaseModel):
+    feature : str
+    value : str
+    shap_value : float
+
 class Response(BaseModel):
     prediction : Annotated[
         Literal[0, 1],
@@ -115,6 +120,8 @@ class Response(BaseModel):
         float,
         Field(ge=0, le=1)
     ] 
+
+    shap_values : list[ShapContribution] | None = None
     
 class DBResponse(BaseModel):
     
@@ -147,7 +154,9 @@ class DBResponse(BaseModel):
         str,
         Field(max_length=20)
     ]
-    
+
+    shap_values : list[ShapContribution] | None = None
+
     model_config = ConfigDict(
         from_attributes = True
     )

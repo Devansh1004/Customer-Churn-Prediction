@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY api ./api
 COPY dashboard ./dashboard
+COPY .streamlit ./.streamlit
 
 ENV PYTHONPATH=/app
 

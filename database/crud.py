@@ -8,10 +8,12 @@ async def create_prediction_log(
     prediction : int,
     churn_probability : float,
     display_probability : float,
-    model_version : str
+    model_version : str,
+    shap_values : list | None = None
 ):
-    
+
     log = PredictionLog(
+        shap_values = shap_values,
         churn_probability = churn_probability,
         prediction = prediction,
         display_probability = display_probability,
